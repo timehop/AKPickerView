@@ -289,6 +289,17 @@
 	AKCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:NSStringFromClass([AKCollectionViewCell class])
 																		   forIndexPath:indexPath];
 
+	cell.selected = (indexPath.item == self.selectedItem);
+
+	if ([self.dataSource respondsToSelector:@selector(pickerView:titleForItem:)]
+		&& [self.dataSource respondsToSelector:@selector(pickerView:imageForItem:)]) {
+		NSString *title = [self.dataSource pickerView:self titleForItem:indexPath.item];
+		if (title == nil) {
+			cell.imageView.image = [self.dataSource pickerView:self imageForItem:indexPath.item];
+			return cell;
+		}
+	}
+
 	if ([self.dataSource respondsToSelector:@selector(pickerView:titleForItem:)]) {
 		NSString *title = [self.dataSource pickerView:self titleForItem:indexPath.item];
 		cell.label.text = title;
@@ -308,7 +319,6 @@
 	} else if ([self.dataSource respondsToSelector:@selector(pickerView:imageForItem:)]) {
 		cell.imageView.image = [self.dataSource pickerView:self imageForItem:indexPath.item];
 	}
-	cell.selected = (indexPath.item == self.selectedItem);
 
 	return cell;
 }
