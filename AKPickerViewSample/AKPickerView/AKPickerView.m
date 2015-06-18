@@ -16,13 +16,6 @@
 - (AKPickerViewStyle)pickerViewStyleForCollectionViewLayout:(AKCollectionViewLayout *)layout;
 @end
 
-@interface AKCollectionViewCell : UICollectionViewCell
-@property (nonatomic, strong) UILabel *label;
-@property (nonatomic, strong) UIImageView *imageView;
-@property (nonatomic, strong) UIFont *font;
-@property (nonatomic, strong) UIFont *highlightedFont;
-@end
-
 @interface AKCollectionViewLayout : UICollectionViewFlowLayout
 @property (nonatomic, assign) id <AKCollectionViewLayoutDelegate> delegate;
 @end
@@ -51,6 +44,7 @@
 	self.highlightedTextColor = self.highlightedTextColor ?: [UIColor blackColor];
 	self.pickerViewStyle = self.pickerViewStyle ?: AKPickerViewStyle3D;
 	self.maskDisabled = self.maskDisabled;
+    self.cellClass = [AKCollectionViewCell class];
 
 	[self.collectionView removeFromSuperview];
 	self.collectionView = [[UICollectionView alloc] initWithFrame:self.bounds
@@ -60,8 +54,8 @@
 	self.collectionView.decelerationRate = UIScrollViewDecelerationRateFast;
 	self.collectionView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	self.collectionView.dataSource = self;
-	[self.collectionView registerClass:[AKCollectionViewCell class]
-			forCellWithReuseIdentifier:NSStringFromClass([AKCollectionViewCell class])];
+	[self.collectionView registerClass:self.cellClass
+			forCellWithReuseIdentifier:NSStringFromClass(self.cellClass)];
 	[self addSubview:self.collectionView];
 
 	self.intercepter = [AKPickerViewDelegateIntercepter new];
@@ -152,12 +146,28 @@
 	});
 }
 
+- (void)setCellClass:(Class)cellClass
+{
+    _cellClass = cellClass;
+    
+    [self.collectionView registerClass:_cellClass forCellWithReuseIdentifier:NSStringFromClass(_cellClass)];
+}
+
+- (void)setItemSize:(CGSize)itemSize
+{
+    _itemSize = itemSize;
+    
+    AKCollectionViewLayout *layout = (AKCollectionViewLayout *)self.collectionView.collectionViewLayout;
+    layout.itemSize = _itemSize;
+}
+
 #pragma mark -
 
 - (AKCollectionViewLayout *)collectionViewLayout
 {
 	AKCollectionViewLayout *layout = [AKCollectionViewLayout new];
 	layout.delegate = self;
+    layout.itemSize = self.itemSize;
 	return layout;
 }
 
@@ -286,7 +296,7 @@
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-	AKCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:NSStringFromClass([AKCollectionViewCell class])
+	AKCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:NSStringFromClass(self.cellClass)
 																		   forIndexPath:indexPath];
 
 	if ([self.dataSource respondsToSelector:@selector(pickerView:titleForItem:)]) {
@@ -308,6 +318,9 @@
 	} else if ([self.dataSource respondsToSelector:@selector(pickerView:imageForItem:)]) {
 		cell.imageView.image = [self.dataSource pickerView:self imageForItem:indexPath.item];
 	}
+    if ([self.delegate respondsToSelector:@selector(pickerView:configureCell:forItem:)]) {
+        [self.delegate pickerView:self configureCell:cell forItem:indexPath.item];
+    }
 	cell.selected = (indexPath.item == self.selectedItem);
 
 	return cell;
@@ -315,6 +328,10 @@
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (!CGSizeEqualToSize(self.itemSize, CGSizeZero)) {
+        return self.itemSize;
+    }
+    
 	CGSize size = CGSizeMake(self.interitemSpacing, collectionView.bounds.size.height);
 	if ([self.dataSource respondsToSelector:@selector(pickerView:titleForItem:)]) {
 		NSString *title = [self.dataSource pickerView:self titleForItem:indexPath.item];

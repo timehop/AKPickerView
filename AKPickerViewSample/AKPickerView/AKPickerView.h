@@ -14,6 +14,7 @@ typedef NS_ENUM(NSInteger, AKPickerViewStyle) {
 };
 
 @class AKPickerView;
+@class AKCollectionViewCell;
 
 @protocol AKPickerViewDataSource <NSObject>
 @required
@@ -28,12 +29,22 @@ typedef NS_ENUM(NSInteger, AKPickerViewStyle) {
 - (void)pickerView:(AKPickerView *)pickerView didSelectItem:(NSInteger)item;
 - (CGSize)pickerView:(AKPickerView *)pickerView marginForItem:(NSInteger)item;
 - (void)pickerView:(AKPickerView *)pickerView configureLabel:(UILabel * const)label forItem:(NSInteger)item;
+- (void)pickerView:(AKPickerView *)pickerView configureCell:(AKCollectionViewCell * const)cell forItem:(NSInteger)item;
+@end
+
+@interface AKCollectionViewCell : UICollectionViewCell
+@property (nonatomic, strong) UILabel *label;
+@property (nonatomic, strong) UIImageView *imageView;
+@property (nonatomic, strong) UIFont *font;
+@property (nonatomic, strong) UIFont *highlightedFont;
 @end
 
 @interface AKPickerView : UIView
 
 @property (nonatomic, weak) id <AKPickerViewDataSource> dataSource;
 @property (nonatomic, weak) id <AKPickerViewDelegate> delegate;
+@property (nonatomic, strong) Class cellClass;
+@property (nonatomic, assign) CGSize itemSize;
 @property (nonatomic, strong) UIFont *font;
 @property (nonatomic, strong) UIFont *highlightedFont;
 @property (nonatomic, strong) UIColor *textColor;
